@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadVideo, getAllVideos, getVideoById, getUserVideos, deleteVideo, toggleLike, incrementViews } from "../controllers/video.controller.ts";
+import { uploadVideo, getAllVideos, getVideoById, getUserVideos, deleteVideo, toggleLike, incrementViews, dislikeVideo } from "../controllers/video.controller.ts";
 import { upload } from "../middlewares/upload.ts";
 import { verifyToken } from "../middlewares/verifyToken.ts";
 import { asyncHandler } from "../utils/asyncHandler.ts";
@@ -19,5 +19,6 @@ router.get("/user/:userId", getUserVideos);
 router.delete("/:id", asyncHandler(verifyToken), asyncHandler(deleteVideo));
 router.put("/:id/like", asyncHandler(verifyToken), asyncHandler(toggleLike));  // Protected
 router.put("/:id/view", asyncHandler(incrementViews));           // Public
+router.put("/:id/dislike", asyncHandler(verifyToken), asyncHandler(dislikeVideo));
 
 export default router;

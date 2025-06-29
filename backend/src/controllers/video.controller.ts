@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.ts";
 import Video from "../models/video.model.ts";
 import fs from "fs";
 import mongoose from "mongoose";
+import { RequestHandler } from "express";
 
 export const uploadVideo = async (req: Request, res: Response) => {
   try {
@@ -127,5 +128,50 @@ export const incrementViews = async (req: Request, res: Response) => {
     res.status(200).json({ message: "View count incremented", views: video.views });
   } catch (error) {
     res.status(500).json({ message: "Failed to increment views", error });
+  }
+};
+
+export const dislikeVideo = async (req: Request, res: Response) => {
+  try {
+    const videoId = req.params.id;
+    const userId = req.userId; // this is string | undefined
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    const objectUserId = new mongoose.Types.ObjectId(userId);
+
+    const hasDisliked = video.dislikes.some(
+      (id) => id.toString() === userId
+    );
+
+    const hasLiked = video.likes.some(
+      (id) => id.toString() === userId
+    );
+
+    if (hasDisliked) {
+      video.dislikes = video.dislikes.filter(
+        (id) => id.toString() !== userId
+      );
+    } else {
+      video.dislikes.push(objectUserId);
+      if (hasLiked) {
+        video.likes = video.likes.filter(
+          (id) => id.toString() !== userId
+        );
+      }
+    }
+
+    await video.save();
+    res.status(200).json({ message: "Dislike status updated", video });
+  } catch (error) {
+    console.error("Error in dislikeVideo:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
