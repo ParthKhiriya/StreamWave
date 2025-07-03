@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/user.model.ts';
+import Video from "../models/video.model.ts";
 
 export const getCurrentUser = async (req: Request, res: Response) => {
     try {
@@ -104,5 +105,36 @@ export const unsubscribeUser = async (req: Request, res: Response) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Failed to unsubscribe", error });
+  }
+};
+
+export const getUserChannelInfo = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.userId;
+
+    // Explicitly fetch the array of subscribers
+    const user = await User.findById(userId)
+      .select("username email subscribers")
+      .lean(); // Use .lean() to get a plain JS object
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const subscriberCount = Array.isArray(user.subscribers)
+      ? user.subscribers.length
+      : 0;
+
+    const videoCount = await Video.countDocuments({ user: userId });
+
+    res.status(200).json({
+      username: user.username,
+      email: user.email,
+      subscriberCount,
+      totalVideos: videoCount,
+    });
+  } catch (error) {
+    console.error("Get Channel Info Error:", error);
+    res.status(500).json({ message: "Failed to get channel info", error });
   }
 };

@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes.ts";
 import testRoutes from "./routes/test.routes.ts";
 import userRoutes from "./routes/user.routes.ts";
 import videoRoutes from "./routes/video.routes.ts";
+import commentRoutes from "./routes/comment.routes.ts";
 
 dotenv.config();
 connectDB(); // Connect to MongoDB
@@ -23,6 +24,7 @@ app.use("/api/test", testRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/videos", videoRoutes);
 app.use("/uploads", express.static(path.join("uploads")));
+app.use("/api/comments", commentRoutes);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("StreamWave is running!");

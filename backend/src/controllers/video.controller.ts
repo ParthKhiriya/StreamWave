@@ -175,3 +175,64 @@ export const dislikeVideo = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Search videos by title, description, or tags
+export const searchVideos = async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const videos = await Video.find({
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { tags: { $in: [query.toLowerCase()] } },
+      ],
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(videos);
+  } catch (error) {
+    res.status(500).json({ message: "Search failed", error });
+  }
+};
+
+// Filter videos by tags
+export const filterVideosByTags = async (req: Request, res: Response) => {
+  try {
+    const tags = (req.query.tags as string)?.split(",").map(tag => tag.trim().toLowerCase());
+
+    if (!tags || tags.length === 0) {
+      return res.status(400).json({ message: "No tags provided for filtering" });
+    }
+
+    const videos = await Video.find({
+      tags: { $in: tags },
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(videos);
+  } catch (error) {
+    res.status(500).json({ message: "Filtering by tags failed", error });
+  }
+};
+
+// Get recommended videos based on tags of a given video
+export const getRecommendedVideos = async (req: Request, res: Response) => {
+  try {
+    const videoId = req.params.id;
+
+    const currentVideo = await Video.findById(videoId);
+    if (!currentVideo) return res.status(404).json({ message: "Video not found" });
+
+    const recommendedVideos = await Video.find({
+      _id: { $ne: videoId },
+      tags: { $in: currentVideo.tags },
+    }).limit(10);
+
+    res.status(200).json(recommendedVideos);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch recommendations", error });
+  }
+};
